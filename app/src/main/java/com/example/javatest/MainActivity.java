@@ -23,6 +23,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ListView;
+import android.widget.SeekBar;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -32,6 +33,8 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
@@ -88,7 +91,13 @@ public class MainActivity extends AppCompatActivity {
         Button btnPermission = findViewById(R.id.btnPermission);
         Button btnScan = findViewById(R.id.btnScan);
         Button btnConnect = findViewById(R.id.btnConnect);
-        Button btnSend = findViewById(R.id.btnSend);
+        Button btnSend = findViewById(R.id.btnSendRainbow);
+        Button btnSendWalking =  findViewById(R.id.btnSendWalking);
+        Button btnSendSpeed =  findViewById(R.id.btnSendSpeed);
+
+
+
+
 
         btnPermission.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -144,6 +153,37 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+
+
+        btnSendSpeed.setOnClickListener(new View.OnClickListener() {
+            @SuppressLint("MissingPermission")
+            @Override
+            public void onClick(View v) {
+                if (m_gatt != null) {
+                    UUID hatServiceUUID = UUID.fromString("65dbc53e-0000-4422-947c-f016c0e0af10");
+                    BluetoothGattService hatService = m_gatt.getService(hatServiceUUID);
+                    UUID hatCharacteristicUUID = UUID.fromString("65dbc53e-0001-4422-947c-f016c0e0af10");
+                    BluetoothGattCharacteristic hatCharacteristic = hatService.getCharacteristic(hatCharacteristicUUID);
+                    UUID hatSpeedCharacteristicUUID = UUID.fromString("65dbc53e-0002-4422-947c-f016c0e0af10");
+                    BluetoothGattCharacteristic hatSpeedCharacteristic = hatService.getCharacteristic(hatSpeedCharacteristicUUID);
+
+
+                    SeekBar sbIntensity = findViewById(R.id.sbIntensity);
+                    int position = sbIntensity.getProgress();
+
+                    SeekBar sbSpeed = findViewById(R.id.sbSpeed);
+
+                    ByteBuffer b = ByteBuffer.allocate(Short.SIZE / Byte.SIZE)
+                            .order(ByteOrder.LITTLE_ENDIAN);
+                    b.putShort((short) sbSpeed.getProgress());
+
+
+                    m_gatt.writeCharacteristic(hatSpeedCharacteristic, b.array(),
+                            BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
+                }
+            }
+            });
+
         btnSend.setOnClickListener(new View.OnClickListener() {
             @SuppressLint("MissingPermission")
             @Override
@@ -153,32 +193,115 @@ public class MainActivity extends AppCompatActivity {
                     BluetoothGattService hatService = m_gatt.getService(hatServiceUUID);
                     UUID hatCharacteristicUUID = UUID.fromString("65dbc53e-0001-4422-947c-f016c0e0af10");
                     BluetoothGattCharacteristic hatCharacteristic = hatService.getCharacteristic(hatCharacteristicUUID);
-                    m_gatt.writeCharacteristic(hatCharacteristic, new byte[]{
-                            (byte) 0x00, (byte) 0xFF, (byte) 0x00, //
-                            (byte) 0x3f, (byte) 0xFF, (byte) 0x00, //
-                            (byte) 0xff, (byte) 0xFF, (byte) 0x00, //
-                            (byte) 0xff, (byte) 0x3f, (byte) 0x00, //
-                            (byte) 0xff, (byte) 0x00, (byte) 0x00, //
-                            (byte) 0xff, (byte) 0x00, (byte) 0x3f, //
-                            (byte) 0xff, (byte) 0x00, (byte) 0xFF, //
-                            (byte) 0x3f, (byte) 0x00, (byte) 0xff, //
-                            (byte) 0x00, (byte) 0x00, (byte) 0xFF, //
-                            (byte) 0x00, (byte) 0x3f, (byte) 0xFF, //
-                            (byte) 0x00, (byte) 0xFF, (byte) 0xFF, //
-                            (byte) 0x00, (byte) 0xff, (byte) 0x3f, //
-                            (byte) 0x00, (byte) 0xFF, (byte) 0x00, //
-                            (byte) 0x33, (byte) 0x33, (byte) 0x33, //
-                            (byte) 0x22, (byte) 0x22, (byte) 0x22, //
-                            (byte) 0x11, (byte) 0x11, (byte) 0x11, //
-                            (byte) 0x00, (byte) 0x00, (byte) 0x00, //
-                            (byte) 0x11, (byte) 0x00, (byte) 0x00  //
-                    }, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
+                    UUID hatSpeedCharacteristicUUID = UUID.fromString("65dbc53e-0002-4422-947c-f016c0e0af10");
+                    BluetoothGattCharacteristic hatSpeedCharacteristic = hatService.getCharacteristic(hatSpeedCharacteristicUUID);
+
+
+
+                    SeekBar sbIntensity = findViewById(R.id.sbIntensity);
+                    int position = sbIntensity.getProgress();
+//
+//                    SeekBar sbSpeed = findViewById(R.id.sbSpeed);
+//
+//                    ByteBuffer b =  ByteBuffer.allocate(Short.SIZE / Byte.SIZE)
+//                            .order(ByteOrder.LITTLE_ENDIAN);
+//                    b.putShort((short)sbSpeed.getProgress());
+//
+//
+//                    // It only sends one of them???
+////                    m_gatt.writeCharacteristic(hatSpeedCharacteristic, b.array(),
+////                            BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
+
+
+                    byte[] data = new byte[] {
+                            (byte)(0x00 * position / 100), (byte)(0xFF * position / 100),(byte)( 0x00 * position / 100),
+                            (byte)(0xFF* position / 100),(byte)( 0x55* position / 100),(byte)( 0x00* position / 100),
+                            (byte)(0xFF* position / 100),(byte)( 0xAA* position / 100),(byte)( 0x00* position / 100),
+                            (byte)(0xFF* position / 100),(byte)( 0xFF* position / 100),(byte)( 0x00* position / 100),
+                            (byte)(0xA9* position / 100),(byte)( 0xFF* position / 100),(byte)( 0x00* position / 100),
+                            (byte)(0x54* position / 100),(byte)( 0xFF* position / 100),(byte)( 0x00* position / 100),
+                            (byte)(0x00* position / 100),(byte)( 0xFF* position / 100),(byte)( 0x00* position / 100),
+                            (byte)(0x00* position / 100),(byte)( 0xFF* position / 100),(byte)( 0x55* position / 100),
+                            (byte)(0x00* position / 100),(byte)( 0xFF* position / 100),(byte)( 0xAA* position / 100),
+                            (byte)(0x00* position / 100),(byte)( 0xFF* position / 100),(byte)( 0xFF* position / 100),
+                            (byte)(0x00* position / 100),(byte)( 0xA9* position / 100),(byte)( 0xFF* position / 100),
+                            (byte)(0x00* position / 100),(byte)( 0x55* position / 100),(byte)( 0xFF* position / 100),
+                            (byte)(0x00* position / 100),(byte)( 0x00* position / 100),(byte)( 0xFF* position / 100),
+                            (byte)(0x54* position / 100),(byte)( 0x00* position / 100),(byte)( 0xFF* position / 100),
+                            (byte)(0xAA* position / 100),(byte)( 0x00* position / 100),(byte)( 0xFF* position / 100),
+                            (byte)(0xFF* position / 100),(byte)( 0x00* position / 100),(byte)( 0xFF* position / 100),
+                            (byte)(0xFF* position / 100),(byte)( 0x00* position / 100),(byte)( 0xA9* position / 100),
+                            (byte)(0xFF* position / 100),(byte)( 0x00* position / 100),(byte)( 0x55* position / 100)
+                    };
+                    m_gatt.writeCharacteristic(hatCharacteristic, data,
+                     BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
                 }
             }
         });
 
+
+        btnSendWalking.setOnClickListener(new View.OnClickListener() {
+            @SuppressLint("MissingPermission")
+            @Override
+            public void onClick(View v) {
+                if (m_gatt != null) {
+                    UUID hatServiceUUID = UUID.fromString("65dbc53e-0000-4422-947c-f016c0e0af10");
+                    BluetoothGattService hatService = m_gatt.getService(hatServiceUUID);
+                    UUID hatRGBCharacteristicUUID = UUID.fromString("65dbc53e-0001-4422-947c-f016c0e0af10");
+                    BluetoothGattCharacteristic hatRGBCharacteristic = hatService.getCharacteristic(hatRGBCharacteristicUUID);
+                    UUID hatSpeedCharacteristicUUID = UUID.fromString("65dbc53e-0002-4422-947c-f016c0e0af10");
+                    BluetoothGattCharacteristic hatSpeedCharacteristic = hatService.getCharacteristic(hatSpeedCharacteristicUUID);
+
+//                    ByteBuffer b =  ByteBuffer.allocate(Short.SIZE / Byte.SIZE)
+//                            .order(ByteOrder.LITTLE_ENDIAN);
+//                    b.putShort((short)0);
+//
+//
+//                    m_gatt.writeCharacteristic(hatSpeedCharacteristic,  b.array(),
+//                            BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
+
+
+                    SeekBar sbIntensity = findViewById(R.id.sbIntensity);
+                    int position = sbIntensity.getProgress();
+                    byte[] data = new byte[] {
+                            (byte)(0xFF * position / 100), (byte)(0xFF * position / 100),(byte)( 0xFF * position / 100),
+                            (byte)(0xFF * position / 100), (byte)(0xFF * position / 100),(byte)( 0xFF * position / 100),
+                            (byte)(0xFF * position / 100), (byte)(0xFF * position / 100),(byte)( 0xFF * position / 100),
+                            (byte)(0xFF * position / 100), (byte)(0xFF * position / 100),(byte)( 0xFF * position / 100),
+                            (byte)(0xFF * position / 100), (byte)(0xFF * position / 100),(byte)( 0xFF * position / 100),
+                            (byte)(0xFF * position / 100), (byte)(0xFF * position / 100),(byte)( 0xFF * position / 100),
+                            (byte)(0xFF * position / 100), (byte)(0xFF * position / 100),(byte)( 0xFF * position / 100),
+                            (byte)(0xFF * position / 100), (byte)(0xFF * position / 100),(byte)( 0xFF * position / 100),
+                            (byte)(0xFF * position / 100), (byte)(0xFF * position / 100),(byte)( 0xFF * position / 100),
+
+                            (byte)(0x00 * position / 100), (byte)(0xFF * position / 100),(byte)( 0x00 * position / 100),
+                            (byte)(0x00 * position / 100), (byte)(0xFF * position / 100),(byte)( 0x00 * position / 100),
+                            (byte)(0x00 * position / 100), (byte)(0xFF * position / 100),(byte)( 0x00 * position / 100),
+                            (byte)(0x00 * position / 100), (byte)(0xFF * position / 100),(byte)( 0x00 * position / 100),
+                            (byte)(0x00 * position / 100), (byte)(0xFF * position / 100),(byte)( 0x00 * position / 100),
+                            (byte)(0x00 * position / 100), (byte)(0xFF * position / 100),(byte)( 0x00 * position / 100),
+                            (byte)(0x00 * position / 100), (byte)(0xFF * position / 100),(byte)( 0x00 * position / 100),
+                            (byte)(0x00 * position / 100), (byte)(0xFF * position / 100),(byte)( 0x00 * position / 100),
+                            (byte)(0x00 * position / 100), (byte)(0xFF * position / 100),(byte)( 0x00 * position / 100),
+                    };
+                    m_gatt.writeCharacteristic(hatRGBCharacteristic, data,
+                            BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
+                }
+            }
+        });
+
+
+
+        SeekBar sbIntensity = findViewById(R.id.sbIntensity);
+        // sbIntensity.setMin(0);
+        sbIntensity.setMax(100);
+
+        SeekBar sbSpeed = findViewById(R.id.sbSpeed);
+        // sbIntensity.setMin(0);
+        sbSpeed.setMax(1000);
+
         ListView newDevicesListView = findViewById(R.id.lvHats);
-        
+
         mCustomAdapter = new CustomAdapter(this);
         newDevicesListView.setAdapter(mCustomAdapter);
 
