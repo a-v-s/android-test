@@ -34,10 +34,16 @@
             android:layout_height="wrap_content" />
 
         <Button
-            android:id="@+id/button3"
+            android:id="@+id/btnConnect"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Button" />
+            android:text="Connect" />
+
+        <Button
+            android:id="@+id/btnSend"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Send Test" />
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

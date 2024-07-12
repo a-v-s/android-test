@@ -1,9 +1,12 @@
 package com.example.javatest;
 
+import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
+import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.le.BluetoothLeScanner;
@@ -18,7 +21,6 @@ import android.os.ParcelUuid;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.Toast;
@@ -31,19 +33,21 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
 
     //List<String> subject_list; // for temporary list
 
     Timer timer;
-    TimerTask timerTask;;
+    TimerTask timerTask;
     BluetoothLeScanner btScanner;
 
+    private BluetoothDevice m_device;
+    private BluetoothGatt m_gatt;
 
     private CustomAdapter mCustomAdapter;
     private final ScanCallback leScanCallback = new ScanCallback() {
@@ -71,8 +75,6 @@ public class MainActivity extends AppCompatActivity {
         Log.i("hat", "onCreate called");
 
 
-
-
         // Whatever the example does
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
@@ -85,11 +87,12 @@ public class MainActivity extends AppCompatActivity {
 
         Button btnPermission = findViewById(R.id.btnPermission);
         Button btnScan = findViewById(R.id.btnScan);
+        Button btnConnect = findViewById(R.id.btnConnect);
+        Button btnSend = findViewById(R.id.btnSend);
 
         btnPermission.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
                 askForPermission();
             }
         });
@@ -104,9 +107,78 @@ public class MainActivity extends AppCompatActivity {
         });
 
 
+        btnConnect.setOnClickListener(new View.OnClickListener() {
+            @SuppressLint("MissingPermission")
+            @Override
+            public void onClick(View v) {
+                m_device = mCustomAdapter.getSelectedDevice();
+                m_device.connectGatt(getApplicationContext(),
+                        false,
+                        new BluetoothGattCallback() {
+                            @Override
+                            public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
+                                if (newState == BluetoothProfile.STATE_CONNECTED) {
+                                    // successfully connected to the GATT Server
+                                    Log.i("hat", "Connected");
+                                    gatt.discoverServices();
+                                    gatt.requestMtu(64);
+                                    m_gatt = gatt;
+                                } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                                    // disconnected from the GATT Server
+                                    Log.i("hat", "Disconnected");
+                                    m_gatt = null;
+                                }
+                            }
+
+                            @Override
+                            public void onServicesDiscovered(BluetoothGatt gatt, int status) {
+                                if (status == BluetoothGatt.GATT_SUCCESS) {
+                                    Log.i("hat", "Service discovered");
+                                } else {
+                                    Log.w("hat", "onServicesDiscovered failed: " + status);
+                                }
+                            }
+                        }
+                );
+                connectButtonEnable(false);
+            }
+        });
+
+        btnSend.setOnClickListener(new View.OnClickListener() {
+            @SuppressLint("MissingPermission")
+            @Override
+            public void onClick(View v) {
+                if (m_gatt != null) {
+                    UUID hatServiceUUID = UUID.fromString("65dbc53e-0000-4422-947c-f016c0e0af10");
+                    BluetoothGattService hatService = m_gatt.getService(hatServiceUUID);
+                    UUID hatCharacteristicUUID = UUID.fromString("65dbc53e-0001-4422-947c-f016c0e0af10");
+                    BluetoothGattCharacteristic hatCharacteristic = hatService.getCharacteristic(hatCharacteristicUUID);
+                    m_gatt.writeCharacteristic(hatCharacteristic, new byte[]{
+                            (byte) 0x00, (byte) 0xFF, (byte) 0x00, //
+                            (byte) 0x3f, (byte) 0xFF, (byte) 0x00, //
+                            (byte) 0xff, (byte) 0xFF, (byte) 0x00, //
+                            (byte) 0xff, (byte) 0x3f, (byte) 0x00, //
+                            (byte) 0xff, (byte) 0x00, (byte) 0x00, //
+                            (byte) 0xff, (byte) 0x00, (byte) 0x3f, //
+                            (byte) 0xff, (byte) 0x00, (byte) 0xFF, //
+                            (byte) 0x3f, (byte) 0x00, (byte) 0xff, //
+                            (byte) 0x00, (byte) 0x00, (byte) 0xFF, //
+                            (byte) 0x00, (byte) 0x3f, (byte) 0xFF, //
+                            (byte) 0x00, (byte) 0xFF, (byte) 0xFF, //
+                            (byte) 0x00, (byte) 0xff, (byte) 0x3f, //
+                            (byte) 0x00, (byte) 0xFF, (byte) 0x00, //
+                            (byte) 0x33, (byte) 0x33, (byte) 0x33, //
+                            (byte) 0x22, (byte) 0x22, (byte) 0x22, //
+                            (byte) 0x11, (byte) 0x11, (byte) 0x11, //
+                            (byte) 0x00, (byte) 0x00, (byte) 0x00, //
+                            (byte) 0x11, (byte) 0x00, (byte) 0x00  //
+                    }, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
+                }
+            }
+        });
+
         ListView newDevicesListView = findViewById(R.id.lvHats);
-
-
+        
         mCustomAdapter = new CustomAdapter(this);
         newDevicesListView.setAdapter(mCustomAdapter);
 
@@ -117,6 +189,7 @@ public class MainActivity extends AppCompatActivity {
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
                 mCustomAdapter.selectItem(i);
                 mCustomAdapter.notifyDataSetChanged();
+                connectButtonEnable(true);
             }
         });
 
@@ -127,24 +200,26 @@ public class MainActivity extends AppCompatActivity {
             Toast toast = Toast.makeText(getApplicationContext(), "Device does not support Bluetooth", Toast.LENGTH_LONG);
             toast.show();
         } else {
+            boolean permissionRequired = false;
+            for (String permission : getRequiredPermissions()) {
+                if ((ActivityCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED)) {
+                    // permission required
+                    permissionRequired = true;
+                }
+            }
 
-
-            // TODO different android versions
-            if ((ActivityCompat.checkSelfPermission(this, android.Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) || (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED)) {
-
-
+            if (permissionRequired) {
                 btnPermission.setEnabled(true);
                 btnScan.setEnabled(false);
             } else {
                 btnPermission.setEnabled(false);
                 btnScan.setEnabled(true);
             }
+            connectButtonEnable(false);
         }
     }
 
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-
-
         Button btnPermission = findViewById(R.id.btnPermission);
         Button btnScan = findViewById(R.id.btnScan);
 
@@ -190,9 +265,9 @@ public class MainActivity extends AppCompatActivity {
             public void run() {
                 if (btScanner != null)
                     btScanner.stopScan(leScanCallback);
-                    Looper.prepare(); // whatever this does, it's required to toast in this thread.
-                    Toast toast = Toast.makeText(getApplicationContext(), "Stopping Scan", Toast.LENGTH_LONG);
-                    toast.show();
+                Looper.prepare(); // whatever this does, it's required to toast in this thread.
+                Toast toast = Toast.makeText(getApplicationContext(), "Stopping Scan", Toast.LENGTH_LONG);
+                toast.show();
 
                 scanButtonEnable(true);
             }
@@ -208,7 +283,7 @@ public class MainActivity extends AppCompatActivity {
         btScanner = bluetoothAdapter.getBluetoothLeScanner();
         btScanner.startScan(leScanCallback);
         scanButtonEnable(false);
-
+        connectButtonEnable(false);
 
 
     }
@@ -234,11 +309,49 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    void connectButtonEnable(boolean enabled) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Button btnConnect = findViewById(R.id.btnConnect);
+                btnConnect.setEnabled(enabled);
+            }
+        });
+    }
+
+
     void askForPermission() {
+        ActivityCompat.requestPermissions(MainActivity.this, getRequiredPermissions(), 0xB7);
+    }
+
+    String[] getRequiredPermissions() {
+        // Different android versions require a different set of permissions to use bluetooth
+        // This function lists the appropriate permissions for the version we are running on.
+
+        ArrayList<String> result = new ArrayList<>();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            ActivityCompat.requestPermissions(MainActivity.this, new String[]{"android.permission.BLUETOOTH_SCAN", "android.permission.BLUETOOTH_CONNECT"}, 0xB7);
+            // "Build.VERSION_CODES.S" means Android 12
+            // See https://apilevels.com/
+            // In Android 12 the permission model for bluetooth changed
+            // Thus we need different permission depending on the version.
+            result.add("android.permission.BLUETOOTH_SCAN");
+            result.add("android.permission.BLUETOOTH_CONNECT");
         } else {
-            ActivityCompat.requestPermissions(MainActivity.this, new String[]{"android.permission.BLUETOOTH", "android.permission.BLUETOOTH_ADMIN", "android.permission.ACCESS_FINE_LOCATION", "android.permission.ACCESS_BACKGROUND_LOCATION", "android.permission.ACCESS_COARSE_LOCATION"}, 0xB7);
+            result.add("android.permission.BLUETOOTH");
+            result.add("android.permission.BLUETOOTH_ADMIN");
+            result.add("android.permission.ACCESS_FINE_LOCATION");
+            result.add("android.permission.ACCESS_COARSE_LOCATION");
+
+            if (Build.VERSION.SDK_INT == Build.VERSION_CODES.R) {
+                // "Build.VERSION_CODES.R" is Android 11.
+                // This Android version required an additional
+                // permission according to
+                // https://medium.com/@elementalistbtg/android-permissions-for-bluetooth-1f3683ec6f5
+                // I do not have an Android 11 device and the emulator
+                // does not emulate Bluetooth. Therefore this remains untested.
+                result.add("android.permission.ACCESS_BACKGROUND_LOCATION");
+            }
         }
+        return result.toArray(new String[0]);
     }
 }

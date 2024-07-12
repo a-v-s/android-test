@@ -70,6 +70,10 @@ public class CustomAdapter extends BaseAdapter {
         mSelectedItem = i;
     }
 
+    public BluetoothDevice getSelectedDevice() {
+        return (BluetoothDevice)(getItem((mSelectedItem)));
+    }
+
     @Override
     public View getView(int i, View view, ViewGroup viewGroup) {
     View result;
