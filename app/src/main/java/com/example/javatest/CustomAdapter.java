@@ -80,10 +80,10 @@ public class CustomAdapter extends BaseAdapter {
 
     result = inflter.inflate(R.layout.partyhat, null);
 
-    TextView txtName = (TextView) result.findViewById(R.id.txtName);
+    TextView txtName = result.findViewById(R.id.txtName);
     txtName.setText(( (BluetoothDevice) (mSetTest.toArray()[i]) ).getName() );
 
-    TextView txtAddr = (TextView) result.findViewById(R.id.txtAddress);
+    TextView txtAddr = result.findViewById(R.id.txtAddress);
         txtAddr.setText(( (BluetoothDevice) (mSetTest.toArray()[i]) ).getAddress() );
 
     if (mSelectedItem == i) {
@@ -96,4 +96,4 @@ public class CustomAdapter extends BaseAdapter {
 
     }
 
-};
+}
