@@ -3,35 +3,20 @@ package com.example.javatest;
 
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
-import android.media.Image;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
-import android.widget.ImageView;
 import android.widget.TextView;
 
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.zip.Inflater;
 
 public class CustomAdapter extends BaseAdapter {
     Context context;
-
+    LayoutInflater inflter;
     private LinkedHashSet<BluetoothDevice> mSetTest;
     private int mSelectedItem = -1;
-
-
-
-
-
-
-    LayoutInflater inflter;
-
+    private boolean mConnected = false;
 
 
     public CustomAdapter(Context applicationContext) {
@@ -71,29 +56,37 @@ public class CustomAdapter extends BaseAdapter {
     }
 
     public BluetoothDevice getSelectedDevice() {
-        return (BluetoothDevice)(getItem((mSelectedItem)));
+        return (BluetoothDevice) (getItem((mSelectedItem)));
     }
 
     @Override
     public View getView(int i, View view, ViewGroup viewGroup) {
-    View result;
+        View result;
 
-    result = inflter.inflate(R.layout.partyhat, null);
+        result = inflter.inflate(R.layout.partyhat, null);
 
-    TextView txtName = result.findViewById(R.id.txtName);
-    txtName.setText(( (BluetoothDevice) (mSetTest.toArray()[i]) ).getName() );
+        TextView txtName = result.findViewById(R.id.txtName);
+        txtName.setText(((BluetoothDevice) (mSetTest.toArray()[i])).getName());
 
-    TextView txtAddr = result.findViewById(R.id.txtAddress);
-        txtAddr.setText(( (BluetoothDevice) (mSetTest.toArray()[i]) ).getAddress() );
+        TextView txtAddr = result.findViewById(R.id.txtAddress);
+        txtAddr.setText(((BluetoothDevice) (mSetTest.toArray()[i])).getAddress());
 
-    if (mSelectedItem == i) {
-        result.setBackgroundColor(0xFFCCEECC);
-    } else {
-        result.setBackgroundColor(0xFFCCCCCC);
+
+        if (mConnected) {
+
+            result.setBackgroundColor(0xFFCCEECC);
+        } else if (mSelectedItem == i) {
+            result.setBackgroundColor(0xFF999999);
+        } else {
+            result.setBackgroundColor(0xFFCCCCCC);
+        }
+
+        return result;
+
     }
 
-    return result;
-
+    void setConnected(boolean c) {
+        mConnected =c ;
     }
 
 }
