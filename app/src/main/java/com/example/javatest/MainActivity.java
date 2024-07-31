@@ -749,8 +749,15 @@ public class MainActivity extends AppCompatActivity {
         });
 
 
-        BluetoothManager bluetoothManager = getSystemService(BluetoothManager.class);
-        BluetoothAdapter bluetoothAdapter = bluetoothManager.getAdapter();
+        BluetoothManager bluetoothManager = null;
+        BluetoothAdapter bluetoothAdapter = null;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            bluetoothManager = getSystemService(BluetoothManager.class);
+            bluetoothAdapter = bluetoothManager.getAdapter();
+        } else {
+            bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        }
+
         if (bluetoothAdapter == null) {
             Toast toast = Toast.makeText(getApplicationContext(), "Device does not support Bluetooth", Toast.LENGTH_LONG);
             toast.show();
@@ -836,8 +843,14 @@ public class MainActivity extends AppCompatActivity {
 
         mCustomAdapter.clearItems();
 
-        BluetoothManager bluetoothManager = getSystemService(BluetoothManager.class);
-        BluetoothAdapter bluetoothAdapter = bluetoothManager.getAdapter();
+        BluetoothManager bluetoothManager = null;
+        BluetoothAdapter bluetoothAdapter = null;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            bluetoothManager = getSystemService(BluetoothManager.class);
+            bluetoothAdapter = bluetoothManager.getAdapter();
+        } else {
+            bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        }
 
         btScanner = bluetoothAdapter.getBluetoothLeScanner();
         btScanner.startScan(leScanCallback);
@@ -1142,5 +1155,4 @@ public class MainActivity extends AppCompatActivity {
                 }
         );
     }
-
 }
